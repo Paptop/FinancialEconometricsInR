@@ -1,0 +1,183 @@
+---
+title: "Project1"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-11-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R markdown project
+
+This project analyses data from Wooldridge Source: M. Blackburn and D. Neumark (1992), “Unobserved Ability, Efficiency Wages, and Interindustry Wage Differentials,” Quarterly Journal of Economics 107, 1421-1436.
+
+In this exploration, we aim to unpack the hypothesis suggesting that married women command higher wages. As we navigate the intricacies of a linear regression model, our focus extends beyond scrutinizing the "married" variable alone. We delve into not only the coefficient and significance of marital status but also other pertinent correlations with wage, presenting a holistic perspective on the myriad factors influencing earnings.
+
+A data.frame with 935 observations on 17 variables:
+
+wage: monthly earnings
+
+hours: average weekly hours
+
+IQ: IQ score
+
+KWW: knowledge of world work score
+
+educ: years of education
+
+exper: years of work experience
+
+tenure: years with current employer
+
+age: age in years
+
+married: =1 if married
+
+black: =1 if black
+
+south: =1 if live in south
+
+urban: =1 if live in SMSA (Standard Metropolitan Statistical Area)
+
+sibs: number of siblings
+
+brthord: birth order
+
+meduc: mother's education
+
+feduc: father's education
+
+lwage: natural log of wage
+
+
+```{r wage2, message=FALSE}
+library(wooldridge)
+library(Hmisc)
+
+data('wage2')
+# Removing missing values, total 663 observations
+wage2=na.omit(wage2)
+#describe(wage2)
+head(wage2)
+```
+
+## Data visualisation
+Creating a scatter matrix plot of data with correlation coefficients.
+The scatter plot matrix did not highlight best correlations, that is why providing a separate plot for correlations.
+
+
+```{r pressure, echo=FALSE, fig.width=12, fig.height=12, include=TRUE, message=FALSE}
+library(ggstatsplot)
+library(ggplot2)
+library(psych)
+library(car)
+library(lmtest)
+library(sandwich)
+
+ggplot(wage2, aes(x = wage2$IQ, y = wage2$wage, color = factor(wage2$married))) +
+  geom_point() +
+  labs(title = "Scatter Plot of IQ and Wage Colored By Married Status",
+       x = "IQ",
+       y = "Wage",
+       color = "Married Status") +
+  scale_color_manual(values = c("green", "blue"))
+
+ggplot(wage2, aes(x = wage2$IQ, y = wage2$wage, color = factor(wage2$black))) +
+  geom_point() +
+  labs(title = "Scatter Plot of IQ and Wage Colored By Race",
+       x = "IQ",
+       y = "Wage",
+       color = "Race") +
+  scale_color_manual(values = c("red", "black"))
+
+
+ggplot(wage2, aes(x = wage2$IQ, y = wage2$wage, color = factor(wage2$urban))) +
+  geom_point() +
+  labs(title = "Scatter Plot of IQ and Wage Colored By Urban",
+       x = "IQ",
+       y = "Wage",
+       color = "Urban") +
+  scale_color_manual(values = c("blue", "orange"))
+
+# scatter plot matrix with correlations
+pairs.panels(wage2, main = "Scatter Plot Matrix for Wage2 Dataset", pch=".", lm=TRUE, smoother=TRUE)
+
+# correlogram
+ggstatsplot::ggcorrmat(
+  data = wage2,
+  type = "parametric", # parametric for Pearson, nonparametric for Spearman's correlation
+  colors = c("darkred", "white", "steelblue") # change default colors
+)
+```
+
+## Normality
+Checking the normality of the data.
+This block of code checks for normality of the data. Wage is skewed to left as expected, but the log of wage is more towards normal distribution
+
+```{r Normality, message=FALSE}
+library('ggpubr')
+par(mfrow=c(2,2))
+shapiro.test(wage2$wage)
+shapiro.test(wage2$lwage)
+
+plot0 <- ggdensity(wage2$wage, main="Density plot of wage", xlab="wage")
+plot1 <- ggqqplot(wage2$wage, title="QQ plot of wage")
+
+plot2 <- ggdensity(wage2$lwage, main="Density plot of log wage", xlab="log(wage)")
+plot3 <- ggqqplot(wage2$lwage, title="QQ plot of log wage")
+
+ggarrange(plot0, plot1, plot2, plot3, ncol=2, nrow=2)
+```
+## Linear regression
+```{r ,message = FALSE}
+
+# Remove the wage from the model
+wage2 <- subset(wage2, select = -wage)
+
+# Standard model
+model0 <- lm(wage2$lwage~., data = wage2)
+
+library(MASS)
+# step select smaller model
+fit <-  lm(wage2$lwage~.,data = wage2)
+model1 <- stepAIC(fit, direction='both', trace=0)
+
+summary(model0)
+summary(model1)
+```
+
+### Collinearity
+if higher than 5 indicates collinearity. Here we do not have this issue, but if we did, we would remove one of the variables with high VIF from the model.
+```{r Collinearity}
+library(car)
+vif(model0)
+vif(model1)
+```
+
+### Heteroscedasticity
+```{r Heteroscedasticity}
+bptest(model1)
+model1.fixed <- coeftest(model1, vcov. = vcovHC(model1, type = 'HC3'))
+model1.fixed
+
+
+bptest(model0)
+model0.fixed <- model1.fixed <- coeftest(model1, vcov. = vcovHC(model1, type = 'HC3'))
+model0.fixed
+```
+### Normality of residuals
+```{r Normality of residuals}
+library(olsrr)
+
+ols_test_normality(model0)
+ols_test_normality(model1)
+
+```
+
+### Conclusion
+The coefficient for "married" stands at 0.0357696, suggesting a positive association between marital status and wages. Crucially, the p-value of 0.023591, less than the conventional significance level of 0.05, signifies statistical significance. This implies that, according to the model, being married is not merely incidental but significantly associated with higher earnings. Beyond the exploration of marital status, other variables like wage levels, working hours, tenure, and regional dynamics emerge as influential contributors to the earnings tapestry.
+
+In conclusion, the analysis lends support to the hypothesis that married women do, indeed, earn higher wages. The positive coefficient and statistically significant p-value imply a meaningful connection between marital status and increased earnings, providing empirical evidence to corroborate the initial claim. It's imperative to note that this statistical evidence, while robust, does not establish causation, and other unconsidered factors may contribute to the observed relationship.
