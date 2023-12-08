@@ -6,7 +6,7 @@ author:
 output:
   pdf_document: default
   html_document: default
-date: "2023-11-28"
+date: "2023-12-08"
 
 ---
 
@@ -14,11 +14,13 @@ date: "2023-11-28"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R markdown project
+## 1. Introduction
 
   This project analyses data from Wooldridge Source: M. Blackburn and D. Neumark (1992), “Unobserved Ability, Efficiency Wages, and Interindustry Wage Differentials,” Quarterly Journal of Economics 107, 1421-1436. It loads lazily data from __wooldbridge package__.
 
   In this exploration, we aim to unpack the hypothesis suggesting that married people have higher wages. As we navigate the intricacies of a linear regression model, our focus extends beyond scrutinizing the "married" variable alone. We delve into not only the coefficient and significance of marital status but also other pertinent correlations with wage.
+
+**For more statistical data information see appendix**.
 
 A data.frame with 935 observations on 17 variables:
 Removing missing values, total 663 observations
@@ -52,7 +54,7 @@ wage2=na.omit(wage2)
 head(wage2)
 ```
 
-## Data visualisation
+## 2. Data visualisation
 Visualizing data to provide some insight on the research.
 Figure 1, 2, 3 are simple scatter plots between IQ and Wage colored by binary class.
 It shows some tendency that people with higher IQ tend to have higher wages.
@@ -117,7 +119,7 @@ ggstatsplot::ggcorrmat(
 )
 ```
 
-## Normality
+## 3. Normality
 Checking the normality of the data.
 This block of code checks for normality of the data. Wage is skewed to left as expected, but the log of wage is more towards normal distribution
 
@@ -136,10 +138,13 @@ plot3 <- ggqqplot(wage2$lwage, title="QQ plot of log wage")
 ggarrange(plot0, plot1, plot2, plot3, ncol=2, nrow=2)
 ```
 
-## Linear regression
+## 4. Linear regression
 Creating a model with lwage as a dependent variable.
 Removing actual wage from the model and creating a linear regression model.
-Additionally, adding a stepwise selection process for more simple model with only necessary variables.
+
+Additionally, adding a stepwise selection process to get a simpler model with only necessary variables.
+Stepwise model selection is a method used in statistical modeling to automatically select a subset of variables or features from a larger set of candidates. It's a process where variables are added or removed from the model one at a time based on a predefined criterion, such as the improvement in the model's fit or the significance of the variables. In this way we get simplier model with only important variables. But this method is not silver bullet.
+
 The direction of stepwise is both forward and backward.
 
 ### Model0:
@@ -175,7 +180,7 @@ summary(model0)
 summary(model1)
 ```
 
-### Collinearity
+## 5. Collinearity
 If higher than 5 indicates collinearity. Here we do not have this issue, but if we did, we would remove one of the variables with high VIF from the model.
 ```{r Collinearity}
 library(car)
@@ -183,7 +188,7 @@ vif(model0)
 vif(model1)
 ```
 
-## Heteroscedasticity
+## 6. Heteroscedasticity
 Model 1 and 2 have a heteroscedasticity, the null hypothesis about Homoscedasticity is rejected. That is why recalculating robust standard
 errors with coeftest and heteroscedasticity-robust covariance matrix estimator (HC3).
 
@@ -219,13 +224,15 @@ bptest(model1)
 model1.fixed <- model1.fixed <- coeftest(model1, vcov. = vcovHC(model1, type = 'HC3'))
 model1.fixed
 ```
-### Normality of residuals
+## 8. Normality of residuals
 For the first set of results:
 
 All four tests (Shapiro-Wilk, Kolmogorov-Smirnov, Cramer-von Mises, Anderson-Darling) indicate a rejection of the null hypothesis of normality. The p-values are very close to zero.  
 
 For the second set of results:  
-Again, all tests suggest a rejection of the null hypothesis of normality. The p-values are low, particularly for Shapiro-Wilk and Anderson-Darling.  
+Again, all tests suggest a rejection of the null hypothesis of normality. The p-values are low, particularly for Shapiro-Wilk and Anderson-Darling.
+
+As it is not crucial for descriptive analysis, only indicating that normality fails.
 
 ```{r Normality of residuals, message='False'}
 library(olsrr)
@@ -235,7 +242,7 @@ ols_test_normality(model1)
 
 ```
 
-### Conclusion
+## 9. Conclusion
 The coefficient for "married" appeared statistically significant in both models suggesting a positive association between marital status and wages. Additionally with visual analysis and correlation calculations it has also appeared among descriptive variables.  
 
 This implies that, according to the model, being married is not merely incidental but significantly associated with higher earnings. Beyond the exploration of marital status, the top variables are education, hours, urban in the models.
@@ -246,7 +253,7 @@ The negative correlation with wages are race, south and number of siblings. From
 In conclusion, the analysis lends support to the hypothesis that married do, indeed, earn higher wages. The statistics show a strong connection, but it doesn't prove that one thing causes the other. Other factors we didn't look at could also play a role.
 
 \newpage
-## Appendix
+## 10. Appendix
 ```{r Describing the data}
 # check the data
 head(wage2)
