@@ -1,9 +1,13 @@
 ---
-title: "Project1"
+title: "Project1 - Unobserved Ability, Efficiency Wages, and Interindustry Wage Differentials"
+author:  
+  - "Ieva Jankevičiūtė"
+  - "Ilja Jurčenko"
 output:
   pdf_document: default
   html_document: default
 date: "2023-11-28"
+
 ---
 
 ```{r setup, include=FALSE}
@@ -12,46 +16,30 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## R markdown project
 
-This project analyses data from Wooldridge Source: M. Blackburn and D. Neumark (1992), “Unobserved Ability, Efficiency Wages, and Interindustry Wage Differentials,” Quarterly Journal of Economics 107, 1421-1436.
+  This project analyses data from Wooldridge Source: M. Blackburn and D. Neumark (1992), “Unobserved Ability, Efficiency Wages, and Interindustry Wage Differentials,” Quarterly Journal of Economics 107, 1421-1436. It loads lazily data from __wooldbridge package__.
 
-In this exploration, we aim to unpack the hypothesis suggesting that married women command higher wages. As we navigate the intricacies of a linear regression model, our focus extends beyond scrutinizing the "married" variable alone. We delve into not only the coefficient and significance of marital status but also other pertinent correlations with wage, presenting a holistic perspective on the myriad factors influencing earnings.
+  In this exploration, we aim to unpack the hypothesis suggesting that married people have higher wages. As we navigate the intricacies of a linear regression model, our focus extends beyond scrutinizing the "married" variable alone. We delve into not only the coefficient and significance of marital status but also other pertinent correlations with wage.
 
 A data.frame with 935 observations on 17 variables:
+Removing missing values, total 663 observations
 
-wage: monthly earnings
-
-hours: average weekly hours
-
-IQ: IQ score
-
-KWW: knowledge of world work score
-
-educ: years of education
-
-exper: years of work experience
-
-tenure: years with current employer
-
-age: age in years
-
-married: =1 if married
-
-black: =1 if black
-
-south: =1 if live in south
-
-urban: =1 if live in SMSA (Standard Metropolitan Statistical Area)
-
-sibs: number of siblings
-
-brthord: birth order
-
-meduc: mother's education
-
-feduc: father's education
-
-lwage: natural log of wage
-
+**wage:** monthly earnings.  
+**hours:** average weekly hours.  
+**IQ:** IQ score.  
+**KWW:** knowledge of world work score.   
+**educ:** years of education.  
+**exper:** years of work experience.  
+**tenure:** years with current employer.   
+**age:** age in years.  
+**married:** =1 if married.   
+**black:** =1 if black.  
+**south:** =1 if live in south.   
+**urban:** =1 if live in SMSA (Standard Metropolitan Statistical Area).   
+**sibs:** number of siblings.  
+**brthord:** birth order.  
+**meduc:** mother's education.   
+**feduc:** father's education.  
+**lwage:** natural log of wage.  
 
 ```{r wage2, message=FALSE}
 library(wooldridge)
@@ -65,8 +53,20 @@ head(wage2)
 ```
 
 ## Data visualisation
-Creating a scatter matrix plot of data with correlation coefficients.
-The scatter plot matrix did not highlight best correlations, that is why providing a separate plot for correlations.
+Visualizing data to provide some insight on the research.
+Figure 1, 2, 3 are simple scatter plots between IQ and Wage colored by binary class.
+It shows some tendency that people with higher IQ tend to have higher wages.
+
+**Figure 1** - shows people with higher IQ tend to have higher wages and are married.  
+**Figure 2** - shows people with lower IQ and lower wages tend to be African.  
+**Figure 3** - shows people with higher IQ and higher wages live in cities.  
+**Figure 4** - provides first information on dependencies between variables and its distributions. The lines are regression lines provided via LM parameter. The interesting dependencies are distinguished by the slope of the line. The dots are blured for better readability. Ellipses in the scatterplot matrix represent confidence ellipses for the scatterplots. These ellipses provide a visual representation of the bivariate relationships between pairs of variables and show the spread and orientation of the data.  
+It is hard to read correlation between the data via big scatterplot that is why Figure 5 provides Pearson correlation information.
+
+**Figure 5** - provides information on correlation. Crossed variables are not significant. Color saturation reflects the impact. Blue have positive correlation, while red negative.  
+
+From the figures the lwage is most impacted by IQ, KWW, Educ, Age, Married, Meduc, Feduc
+The interesting thing is that exper has very low correlation and not signifact in Figure 5.  
 
 
 ```{r pressure, echo=FALSE, fig.width=12, fig.height=12, include=TRUE, message=FALSE}
@@ -79,37 +79,41 @@ library(sandwich)
 
 ggplot(wage2, aes(x = wage2$IQ, y = wage2$wage, color = factor(wage2$married))) +
   geom_point() +
-  labs(title = "Scatter Plot of IQ and Wage Colored By Married Status",
+  labs(title = "Figure 1: Scatter Plot of IQ and Wage Colored By Married Status",
        x = "IQ",
        y = "Wage",
-       color = "Married Status") +
+       color = "Married Status",
+       caption = "Figure 1: Dependency between IQ and Wage, distinguished by married status") +
   scale_color_manual(values = c("green", "blue"))
 
 ggplot(wage2, aes(x = wage2$IQ, y = wage2$wage, color = factor(wage2$black))) +
   geom_point() +
-  labs(title = "Scatter Plot of IQ and Wage Colored By Race",
+  labs(title = "Figure 2: Scatter Plot of IQ and Wage Colored By Race",
        x = "IQ",
        y = "Wage",
-       color = "Race") +
+       color = "Race",
+       caption = "Figure 2: Dependency between IQ and Wage, distinguished by race") +
   scale_color_manual(values = c("red", "black"))
 
 
 ggplot(wage2, aes(x = wage2$IQ, y = wage2$wage, color = factor(wage2$urban))) +
   geom_point() +
-  labs(title = "Scatter Plot of IQ and Wage Colored By Urban",
+  labs(title = "Figure 3: Scatter Plot of IQ and Wage Colored By Urban",
        x = "IQ",
        y = "Wage",
+       caption = "Figure 3: Dependency between IQ and Wage, distinguished by location",
        color = "Urban") +
   scale_color_manual(values = c("blue", "orange"))
 
 # scatter plot matrix with correlations
-pairs.panels(wage2, main = "Scatter Plot Matrix for Wage2 Dataset", pch=".", lm=TRUE, smoother=TRUE)
+pairs.panels(wage2, main = "Figure 4: Scatter Plot Matrix for Wage2 Dataset and correlations", pch=".", lm=TRUE, smoother=TRUE)
 
 # correlogram
 ggstatsplot::ggcorrmat(
   data = wage2,
   type = "parametric", # parametric for Pearson, nonparametric for Spearman's correlation
-  colors = c("darkred", "white", "steelblue") # change default colors
+  colors = c("darkred", "white", "steelblue"),# change default colors
+  caption = "Figure 5: correlation matrix between variables. The most interesting is first row, where lwage correlations are calculated between other variables"
 )
 ```
 
@@ -131,7 +135,29 @@ plot3 <- ggqqplot(wage2$lwage, title="QQ plot of log wage")
 
 ggarrange(plot0, plot1, plot2, plot3, ncol=2, nrow=2)
 ```
+
 ## Linear regression
+Creating a model with lwage as a dependent variable.
+Removing actual wage from the model and creating a linear regression model.
+Additionally, adding a stepwise selection process for more simple model with only necessary variables.
+The direction of stepwise is both forward and backward.
+
+### Model0:
+**Variables Included:** Intercept, hours, IQ, KWW, educ, exper, tenure, age, married, black, south, urban, sibs, brthord, meduc, feduc.  
+**Significant Variables (at 5% level):** Intercept, hours, IQ, educ, exper, tenure, married, urban.  
+**Adjusted R-squared:** 0.2761, indicating that approximately 27.61% of the variability in the response variable is explained by the model.  
+**Residual Standard Error:** 0.3507, representing the typical difference between the observed and predicted values.  
+
+### Model1: with stepwise
+**Variables Included:** Intercept, hours, IQ, KWW, educ, exper, tenure, age, married, black, south, urban, meduc.  
+**Variables Removed:** sibs, brthord, feduc, sibs.  
+**Significant Variables (at 5% level):** Intercept, hours, IQ, educ, exper, tenure, married, urban, meduc.  
+**Adjusted R-squared:** 0.275, indicating that approximately 27.5% of the variability in the response variable is explained by the model.  
+**Residual Standard Error:** 0.351, similar to Model0.  
+
+For predictive model 27% R^2 is low, but for descriptive is is sufficient.  
+Model1 removes sibs, brthord, feduc, sibs.  
+
 ```{r ,message = FALSE}
 
 # Remove the wage from the model
@@ -150,26 +176,58 @@ summary(model1)
 ```
 
 ### Collinearity
-if higher than 5 indicates collinearity. Here we do not have this issue, but if we did, we would remove one of the variables with high VIF from the model.
+If higher than 5 indicates collinearity. Here we do not have this issue, but if we did, we would remove one of the variables with high VIF from the model.
 ```{r Collinearity}
 library(car)
 vif(model0)
 vif(model1)
 ```
 
-### Heteroscedasticity
+## Heteroscedasticity
+Model 1 and 2 have a heteroscedasticity, the null hypothesis about Homoscedasticity is rejected. That is why recalculating robust standard
+errors with coeftest and heteroscedasticity-robust covariance matrix estimator (HC3).
+
+### Model0:
+Breusch-Pagan Test:
+
+Test Statistic (BP): 38.914
+Degrees of Freedom (df): 15
+p-value: 0.00066 (indicating rejection of the null hypothesis of homoscedasticity)
+T-Test of Coefficients:
+
+The table displays the estimated coefficients for each predictor variable along with their standard errors, t-values, and p-values.
+Variables like Intercept, hours, IQ, educ, exper, tenure, married, black, and urban have significant coefficients.
+
+### Model1:
+Breusch-Pagan Test:
+
+Test Statistic (BP): 37.256
+Degrees of Freedom (df): 12
+p-value: 0.000203 (indicating rejection of the null hypothesis of homoscedasticity)
+T-Test of Coefficients:
+
+Similar to Model0, this table provides coefficients with standard errors, t-values, and p-values.
+Variables like Intercept, hours, IQ, educ, exper, tenure, married, black, south, and urban have significant coefficients.
+
 ```{r Heteroscedasticity}
-bptest(model1)
-model1.fixed <- coeftest(model1, vcov. = vcovHC(model1, type = 'HC3'))
-model1.fixed
-
-
 bptest(model0)
-model0.fixed <- model1.fixed <- coeftest(model1, vcov. = vcovHC(model1, type = 'HC3'))
+model0.fixed <- coeftest(model0, vcov. = vcovHC(model0, type = 'HC3'))
 model0.fixed
+
+
+bptest(model1)
+model1.fixed <- model1.fixed <- coeftest(model1, vcov. = vcovHC(model1, type = 'HC3'))
+model1.fixed
 ```
 ### Normality of residuals
-```{r Normality of residuals}
+For the first set of results:
+
+All four tests (Shapiro-Wilk, Kolmogorov-Smirnov, Cramer-von Mises, Anderson-Darling) indicate a rejection of the null hypothesis of normality. The p-values are very close to zero.  
+
+For the second set of results:  
+Again, all tests suggest a rejection of the null hypothesis of normality. The p-values are low, particularly for Shapiro-Wilk and Anderson-Darling.  
+
+```{r Normality of residuals, message='False'}
 library(olsrr)
 
 ols_test_normality(model0)
@@ -178,6 +236,25 @@ ols_test_normality(model1)
 ```
 
 ### Conclusion
-The coefficient for "married" stands at 0.0357696, suggesting a positive association between marital status and wages. Crucially, the p-value of 0.023591, less than the conventional significance level of 0.05, signifies statistical significance. This implies that, according to the model, being married is not merely incidental but significantly associated with higher earnings. Beyond the exploration of marital status, other variables like wage levels, working hours, tenure, and regional dynamics emerge as influential contributors to the earnings tapestry.
+The coefficient for "married" appeared statistically significant in both models suggesting a positive association between marital status and wages. Additionally with visual analysis and correlation calculations it has also appeared among descriptive variables.  
 
-In conclusion, the analysis lends support to the hypothesis that married women do, indeed, earn higher wages. The positive coefficient and statistically significant p-value imply a meaningful connection between marital status and increased earnings, providing empirical evidence to corroborate the initial claim. It's imperative to note that this statistical evidence, while robust, does not establish causation, and other unconsidered factors may contribute to the observed relationship.
+This implies that, according to the model, being married is not merely incidental but significantly associated with higher earnings. Beyond the exploration of marital status, the top variables are education, hours, urban in the models.
+
+Additionally, from the analysis the top variables which describe higher wages are IQ, KWW (knowledge of work), Education.
+The negative correlation with wages are race, south and number of siblings. From the logical point of explanation families with more siblings tend to have lower education levels, living in the south provides less opportunities and race due to economic disparities.
+
+In conclusion, the analysis lends support to the hypothesis that married do, indeed, earn higher wages. The statistics show a strong connection, but it doesn't prove that one thing causes the other. Other factors we didn't look at could also play a role.
+
+\newpage
+## Appendix
+```{r Describing the data}
+# check the data
+head(wage2)
+
+# summary of data
+summary(wage2)
+
+# description of data
+library(psych)
+describe(wage2)
+```
